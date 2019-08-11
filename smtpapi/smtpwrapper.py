@@ -7,19 +7,19 @@ import time
 
 LOGGER = logging.getLogger(__name__)
 
-class Email(MIMEMultipart):
-    def __init__(self,to,From,body,subject,*args,**kwargs):
-        super().__init__(*args,**kwargs)
-        self['Subject'] = subject
-        self['From'] =  From
-        self['To'] =  to
-        self.attach(MIMEText(body,'html'))
-        LOGGER.debug('Message Body: %s' % body)
-        LOGGER.debug('Message To: %s' % to)
-        LOGGER.debug('Message From: %s' % to)
-        LOGGER.debug('Message Subject: %s' % to)
-
 class smtpwrapper():
+    class Email(MIMEMultipart):
+        def __init__(self,to,From,body,subject,*args,**kwargs):
+            super().__init__(*args,**kwargs)
+            self['Subject'] = subject
+            self['From'] =  From
+            self['To'] =  to
+            self.attach(MIMEText(body,'html'))
+            LOGGER.debug('Message Body: %s' % body)
+            LOGGER.debug('Message To: %s' % to)
+            LOGGER.debug('Message From: %s' % to)
+            LOGGER.debug('Message Subject: %s' % subject)
+
     def __init__(self,hostname,port,username,password,try_max=5,use_tls=True,*args,**kwargs):
         self.username=username
         self.password=password
@@ -30,6 +30,10 @@ class smtpwrapper():
         self.try_max=try_max
         self.try_delay=0
         self.use_tls=use_tls
+        try:
+            self.conn=self.create_conn
+        except Exception as e:
+            LOGGER.error(e.__str__())
 
     def maybe_reconnect(self,conn):
         try:
@@ -87,6 +91,9 @@ class smtpwrapper():
         except Exception as e:
             LOGGER.error(e.__str__())
             return self,e
+    def sendTemplate(self,*args,**kwargs):
+        msg=self.Email(**kwargs)
+        return self.send_email(msg)
 
 if __name__ == "__main__":
     import yaml
@@ -97,5 +104,11 @@ if __name__ == "__main__":
     def Get_config(config):
         with open(config) as f:
             return Struct(**yaml.safe_load(f))
-
+    logging.basicConfig(level=logging.DEBUG)
     cfg=Get_config('config.yml')
+    LOGGER.debug(cfg.smtp)
+    smtp = smtpwrapper(**cfg.smtp)
+    smtp , result = smtp.sendTemplate(**cfg.send,subject='Privet 1')
+    smtp , result = smtp.sendTemplate(**cfg.send,subject='Privet 2')
+    smtp , result = smtp.sendTemplate(**cfg.send,subject='Privet 3')
+    LOGGER.debug('%s' % (result))
