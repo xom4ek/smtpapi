@@ -4,6 +4,7 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 import logging
 import time
+import json
 
 LOGGER = logging.getLogger(__name__)
 
@@ -90,14 +91,17 @@ class smtpwrapper():
             return self,result
         except Exception as e:
             LOGGER.error(e.__str__())
-            return self,e
+            return self, e.__str__()
+
     def sendTemplate(self,*args,**kwargs):
         msg = self.Email(**kwargs)
-        snd = self.send_email(msg)
-        if snd:
-            return snd
+        self, e = self.send_email(msg)
+        if e:
+            return e.replace("""
+        "
+        """, "")
         else:
-            return 'Success'
+            return {msg['To']: 'Success sending'}
 
 if __name__ == "__main__":
     import yaml

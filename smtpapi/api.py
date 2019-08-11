@@ -4,7 +4,9 @@ import io
 import shutil
 from flask import Flask, request, jsonify, send_file
 from smtpwrapper import smtpwrapper
+import logging
 
+LOGGER = logging.getLogger(__name__)
 app = Flask(__name__)
 app.config['JSON_AS_ASCII'] = False
 
@@ -29,4 +31,5 @@ def sendTemplate():
         return 'Wrong parameters'
 
 if __name__ == '__main__':
+    logging.basicConfig(level=logging.DEBUG)
     app.run()
