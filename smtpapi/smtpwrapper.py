@@ -92,8 +92,12 @@ class smtpwrapper():
             LOGGER.error(e.__str__())
             return self,e
     def sendTemplate(self,*args,**kwargs):
-        msg=self.Email(**kwargs)
-        return self.send_email(msg)
+        msg = self.Email(**kwargs)
+        snd = self.send_email(msg)
+        if snd:
+            return snd
+        else:
+            return 'Success'
 
 if __name__ == "__main__":
     import yaml
