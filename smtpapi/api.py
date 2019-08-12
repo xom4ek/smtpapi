@@ -33,10 +33,19 @@ smtp = smtpwrapper(**cfg.smtp)
 def sendTemplate():
     if request.method == 'POST':
         try:
-            body = Template(
-                str(request.files['template'].read().decode('utf-8'))).render(request.form.to_dict())
+            l_files = []
+            body = Template(str(request.files['template'].read().decode(
+                'utf-8'))).render(request.form.to_dict())
+            for key in request.files:
+                if key == 'template':
+                    pass
+                else:
+                    # print(key)
+                    # print(request.files[key])
+                    l_files.append({key: request.files[key].read()})
+                    # print(l_files)
             response = jsonify(smtp.sendTemplate(
-                **request.form.to_dict(), body=body))
+                **request.form.to_dict(), body=body, files=l_files))
             return response
         except ConnectionRefusedError as e:
             return e.__str__()

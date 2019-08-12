@@ -1,22 +1,32 @@
 from smtplib import SMTP
 from smtplib import SMTP_SSL
 from email.mime.multipart import MIMEMultipart
+from email.mime.application import MIMEApplication
 from email.mime.text import MIMEText
 import logging
 import time
 import json
+import os
 
 LOGGER = logging.getLogger(__name__)
 
 
 class smtpwrapper():
     class Email(MIMEMultipart):
-        def __init__(self, to, From, body, subject, *args, **kwargs):
+        def __init__(self, to, From, body, subject, files=[], *args, **kwargs):
             super().__init__(*args, **kwargs)
             self['Subject'] = subject
             self['From'] = From
             self['To'] = to
             self.attach(MIMEText(body, 'html'))
+            for f in files:
+                print(os.path.splitext(str(*f)))
+                self.msgAttach = MIMEApplication(
+                    f[str(*f)], _subtype=os.path.splitext(str(*f))[1][:1])
+                self.msgAttach.add_header(
+                    'content-disposition', 'attachment', filename=str(*f))
+                self.attach(self.msgAttach)
+
             LOGGER.debug('Message Body: %s' % body)
             LOGGER.debug('Message To: %s' % to)
             LOGGER.debug('Message From: %s' % From)
