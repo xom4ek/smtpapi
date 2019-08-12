@@ -3,12 +3,15 @@ from smtplib import SMTP_SSL
 from email.mime.multipart import MIMEMultipart
 from email.mime.application import MIMEApplication
 from email.mime.text import MIMEText
+from email.mime.image import MIMEImage
 import logging
 import time
 import json
 import os
 
 LOGGER = logging.getLogger(__name__)
+
+image_extension = ['.png', '.jpeg', '.jpg', '.bmp', '.tif']
 
 
 class smtpwrapper():
@@ -20,12 +23,20 @@ class smtpwrapper():
             self['To'] = to
             self.attach(MIMEText(body, 'html'))
             for f in files:
-                print(os.path.splitext(str(*f)))
-                self.msgAttach = MIMEApplication(
-                    f[str(*f)], _subtype=os.path.splitext(str(*f))[1][:1])
-                self.msgAttach.add_header(
-                    'content-disposition', 'attachment', filename=str(*f))
-                self.attach(self.msgAttach)
+                filename = str(*f)
+                print(filename)
+                filename_ext = os.path.splitext(filename)[1].lower()
+                if filename_ext in image_extension:
+                    self.msgImg = MIMEImage(f[filename])
+                    self.msgImg.add_header(
+                        'Content-ID', '<%s>' % filename)
+                    self.attach(self.msgImg)
+                else:
+                    self.msgAttach = MIMEApplication(
+                        f[filename], _subtype=os.path.splitext(filename)[1][:1])
+                    self.msgAttach.add_header(
+                        'content-disposition', 'attachment', filename=filename)
+                    self.attach(self.msgAttach)
 
             LOGGER.debug('Message Body: %s' % body)
             LOGGER.debug('Message To: %s' % to)
@@ -105,14 +116,14 @@ class smtpwrapper():
             return self, e.__str__()
 
     def sendTemplate(self, *args, **kwargs):
-        msg = self.Email(**kwargs)
-        self, e = self.send_email(msg)
+        self.msg = self.Email(**kwargs)
+        self, e = self.send_email(self.msg)
         if e:
             return e.replace("""
         "
         """, "")
         else:
-            return {msg['To']: 'Success sending'}
+            return {self.msg['To']: 'Success sending'}
 
 
 if __name__ == "__main__":
