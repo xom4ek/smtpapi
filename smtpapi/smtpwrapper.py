@@ -8,6 +8,7 @@ import logging
 import time
 import json
 import os
+import re
 
 LOGGER = logging.getLogger(__name__)
 
@@ -113,17 +114,16 @@ class smtpwrapper():
             return self, result
         except Exception as e:
             LOGGER.error(e.__str__())
-            return self, e.__str__()
+            return self, e
 
     def sendTemplate(self, *args, **kwargs):
         self.msg = self.Email(**kwargs)
         self, e = self.send_email(self.msg)
         if e:
-            return e.replace("""
-        "
-        """, "")
+            error = re.sub("[\{\}b()']", "", e.__str__())
+            return {'response_text': error}
         else:
-            return {self.msg['To']: 'Success sending'}
+            return {}
 
 
 if __name__ == "__main__":

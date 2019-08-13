@@ -10,7 +10,7 @@ from jinja2 import Template
 
 LOGGER = logging.getLogger(__name__)
 LOG_FORMAT = (
-    "{'time':'%(asctime)s', 'name': '%(name)s', 'level': '%(levelname)s', 'message': '%(message)s'}")
+    '{"time":"%(asctime)s", "name": "%(name)s", "level": "%(levelname)s", "message": "%(message)s"}')
 
 app = Flask(__name__)
 app.config['JSON_AS_ASCII'] = False
@@ -50,13 +50,23 @@ def sendTemplate():
                     # print(request.files[key])
                     l_files.append({key: request.files[key].read()})
                     # print(l_files)
-            response = jsonify(smtp.sendTemplate(
-                **request.form.to_dict(), body=body, files=l_files))
-            return response
+            response = smtp.sendTemplate(
+                **request.form.to_dict(), body=body, files=l_files)
+            if response:
+                response['response_code'] = '500'
+            else:
+                response['response_code'] = '200'
+            return jsonify(response)
         except ConnectionRefusedError as e:
-            return e.__str__()
+            return jsonify({
+                'response_code': '501',
+                'response_text': e.__str__()
+            })
         except ValueError as e:
-            return e.__str__()
+            return jsonify({
+                'response_code': '402',
+                'response_text': e.__str__()
+            })
 
 
 if __name__ == '__main__':
