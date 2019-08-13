@@ -9,8 +9,14 @@ from jinja2 import Template
 
 
 LOGGER = logging.getLogger(__name__)
+LOG_FORMAT = (
+    "{'time':'%(asctime)s', 'name': '%(name)s', 'level': '%(levelname)s', 'message': '%(message)s'}")
+
 app = Flask(__name__)
 app.config['JSON_AS_ASCII'] = False
+app.config['JSONIFY_PRETTYPRINT_REGULAR'] = True
+
+logging.basicConfig(level=logging.INFO)
 
 
 class Struct:
