@@ -25,9 +25,6 @@ RUN echo "[main]" >> /etc/dnf/dnf.conf && \
 RUN dnf update && \
     dnf install -y python36
 
-#Add source code
-COPY /smtpapi /app
-COPY config.prod.yml /app/config.yml
 COPY requirements.txt /app/requirements.txt
 WORKDIR /app
 
