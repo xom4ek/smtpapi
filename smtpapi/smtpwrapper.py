@@ -79,8 +79,12 @@ class smtpwrapper():
     def create_conn(self):
         LOGGER.info('Connecting to %s' % self.hostname)
         if self.use_tls:
-            res = self.conn = SMTP_SSL(host=self.hostname, port=self.port)
-            LOGGER.info(res)
+            try:
+                res = self.conn = SMTP_SSL(host=self.hostname, port=self.port,timeout=1)
+                LOGGER.info(res)
+            except Exception as e:
+                LOGGER.error(e.__str__())
+                return e
         else:
             self.conn = SMTP()
             res = self.conn.connect(self.hostname, self.port)
@@ -112,6 +116,9 @@ class smtpwrapper():
             LOGGER.info('Start send message')
             result = self.conn.send_message(msg)
             return self, result
+        except AttributeError as e:
+            LOGGER.error(e.__str__())
+            return self, self.conn
         except Exception as e:
             LOGGER.error(e.__str__())
             return self, e
