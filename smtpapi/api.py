@@ -6,6 +6,7 @@ from flask import Flask, request, jsonify, send_file
 from smtpwrapper import smtpwrapper
 import logging
 from jinja2 import Template
+from easycfg import Config
 
 
 LOGGER = logging.getLogger(__name__)
@@ -18,19 +19,7 @@ app.config['JSONIFY_PRETTYPRINT_REGULAR'] = True
 
 logging.basicConfig(level=logging.INFO)
 
-
-class Struct:
-    def __init__(self, **entries):
-        self.__dict__.update(entries)
-
-
-def Get_config(config):
-    import yaml
-    with open(config) as f:
-        return Struct(**yaml.safe_load(f))
-
-
-cfg = Get_config('config.yml')
+cfg = Config('config.yml')
 
 smtp = smtpwrapper(**cfg.smtp)
 
@@ -46,10 +35,7 @@ def sendTemplate():
                 if key == 'template':
                     pass
                 else:
-                    # print(key)
-                    # print(request.files[key])
                     l_files.append({key: request.files[key].read()})
-                    # print(l_files)
             response = smtp.sendTemplate(
                 **request.form.to_dict(), body=body, files=l_files)
             if response:
@@ -67,8 +53,31 @@ def sendTemplate():
                 'response_code': '402',
                 'response_text': e.__str__()
             })
+    if request.method == 'GET':
+        try:
+            response = smtp.sendTemplate(**request.args)
+            if response:
+                response['response_code'] = '500'
+            else:
+                response['response_code'] = '200'
+            return jsonify(response)
+        except ConnectionRefusedError as e:
+            return jsonify({
+                'response_code': '501',
+                'response_text': e.__str__()
+            })
+        except ValueError as e:
+            return jsonify({
+                'response_code': '402',
+                'response_text': e.__str__()
+            })
+        except TypeError as e:
+            return jsonify({
+                'response_code': '402',
+                'response_text': e.__str__()
+            })
 
 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.DEBUG)
-    app.run(debug=True, host=cfg.h['host'])
+    app.run(debug=True, host=cfg.server['hostname'])
