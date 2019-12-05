@@ -1,4 +1,3 @@
-
 Just HTTP api for send email via smtp server
 
 Right now create only POST request with this params:
@@ -9,3 +8,6 @@ Right now create only POST request with this params:
 | data   | dict with necessery vars to,From,subject. Here you can add vars for jinja formating template |
 | url    | where you start this server                                                                  |
 > For more information see in ./example/example.py
+
+
+Today we add CI-CD for automate deploy
