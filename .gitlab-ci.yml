@@ -67,7 +67,7 @@ run_container:
     - sudo podman pull $CI_REGISTRY_IMAGE/$API_IMAGE:latest
 
   script:
-    - sudo podman run -d --name $API_IMAGE $CI_REGISTRY_IMAGE/$API_IMAGE:latest
+    - sudo podman run -d -p $PORT:8080 --name $API_IMAGE $CI_REGISTRY_IMAGE/$API_IMAGE:latest
 
   when: manual
 
