@@ -37,7 +37,7 @@ build_prod_image:
   script:
     - CURRENT_VERSION=$(cat version)
     - 'curl --request GET -k --header "PRIVATE-TOKEN: $ACCESS_TOKEN" "$CI_API_V4_URL/projects/$CONFIG_PROJECT_ID/repository/files/config.yml/raw?ref=$CI_PROJECT_NAME" > config.yml'
-    - sudo buildah bud --no-cache --build-arg CONFIG=config.yml --build-arg TZ=$CONTAINER_TZ --build-arg SERVER_IMAGE=$CI_REGISTRY_IMAGE/$SERVER_IMAGE -t $CI_REGISTRY_IMAGE/$API_IMAGE:$CURRENT_VERSION -f $DOCKERFILE .
+    - sudo buildah bud --no-cache --build-arg CONFIG=config.yml --build-arg TZ=$CONTAINER_TZ -t $CI_REGISTRY_IMAGE/$API_IMAGE:$CURRENT_VERSION -f $DOCKERFILE .
     - sudo podman tag $CI_REGISTRY_IMAGE/$API_IMAGE:$CURRENT_VERSION $CI_REGISTRY_IMAGE/$API_IMAGE:latest
     - sudo podman push $CI_REGISTRY_IMAGE/$API_IMAGE:$CURRENT_VERSION
     - sudo podman push $CI_REGISTRY_IMAGE/$API_IMAGE:latest
@@ -47,7 +47,6 @@ build_prod_image:
     - source ./variables
     - sudo podman rmi $CI_REGISTRY_IMAGE/$API_IMAGE:$CURRENT_VERSION
     - sudo podman rmi $CI_REGISTRY_IMAGE/$API_IMAGE:latest
-    - sudo podman rmi $CI_REGISTRY_IMAGE/$SERVER_IMAGE:latest
 
   except:
     changes:
