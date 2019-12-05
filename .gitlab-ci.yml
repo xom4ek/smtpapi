@@ -1,0 +1,80 @@
+stages:
+  - version
+  - build
+  - deploy
+
+check_version:
+  stage: version
+
+  before_script:
+    - sudo podman login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+    - VERSION_GENERATOR=$(sudo podman pull $VERSION_GENERATOR)
+
+  script:
+    - sudo podman run --rm $VERSION_GENERATOR $CI_COMMIT_SHA $CI_PROJECT_ID $CI_API_V4_URL $ACCESS_TOKEN > version
+
+  after_script:
+    - sudo podman rmi $VERSION_GENERATOR
+
+  artifacts:
+    paths:
+    - version
+
+  except:
+    changes:
+      - .gitlab-ci.yml
+
+  only:
+    - master
+
+
+build_prod_image:
+  stage: build
+
+  before_script:
+    - sudo podman login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+
+  script:
+    - CURRENT_VERSION=$(cat version)
+    - 'curl --request GET -k --header "PRIVATE-TOKEN: $ACCESS_TOKEN" "$CI_API_V4_URL/projects/$CONFIG_PROJECT_ID/repository/files/config.yml/raw?ref=$CI_PROJECT_NAME" > config.yml'
+    - sudo buildah bud --no-cache -t $CI_REGISTRY_IMAGE/$API_IMAGE:$CURRENT_VERSION -f $DOCKERFILE  --build-arg CONFIG=config.yml --build-arg TZ=$CONTAINER_TZ --build-arg SERVER_IMAGE=$CI_REGISTRY_IMAGE/$SERVER_IMAGE .
+    - sudo podman tag $CI_REGISTRY_IMAGE/$API_IMAGE:$CURRENT_VERSION $CI_REGISTRY_IMAGE/$API_IMAGE:latest
+    - sudo podman push $CI_REGISTRY_IMAGE/$API_IMAGE:$CURRENT_VERSION
+    - sudo podman push $CI_REGISTRY_IMAGE/$API_IMAGE:latest
+    - echo "export CURRENT_VERSION=$CURRENT_VERSION" > ./variables
+
+  after_script:
+    - source ./variables
+    - sudo podman rmi $CI_REGISTRY_IMAGE/$API_IMAGE:$CURRENT_VERSION
+    - sudo podman rmi $CI_REGISTRY_IMAGE/$API_IMAGE:latest
+    - sudo podman rmi $CI_REGISTRY_IMAGE/$SERVER_IMAGE:latest
+
+  except:
+    changes:
+      - .gitlab-ci.yml
+
+  only:
+    - master
+
+
+run_container:
+  stage: deploy
+
+  before_script:
+    - sudo podman login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+    - sudo podman stop $API_IMAGE || echo "Container doesn't started"
+    - sudo podman rm $API_IMAGE || echo "Coniner doesn't exist"
+    - sudo podman rmi $CI_REGISTRY_IMAGE/$API_IMAGE:latest || echo "Image doesn't exist"
+    - sudo podman pull $CI_REGISTRY_IMAGE/$API_IMAGE:latest
+
+  script:
+    - sudo podman run -d --name $API_IMAGE $CI_REGISTRY_IMAGE/$API_IMAGE:latest
+
+  when: manual
+
+  except:
+    changes:
+      - .gitlab-ci.yml
+
+  only:
+    - master

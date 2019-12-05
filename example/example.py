@@ -16,8 +16,7 @@ data = {
 
 files = {
     'example.png': open('example.png', 'rb'),
-    'template': open('template.html.j2', 'rb'),
-    'att1.html': open('template.html.j2', 'rb')
+    'template': open('template.html.j2', 'rb')
 }
 r = requests.post(url, files=files, data=data)
 print(r.text)

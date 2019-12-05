@@ -76,8 +76,3 @@ def sendTemplate():
                 'response_code': '402',
                 'response_text': e.__str__()
             })
-
-
-if __name__ == '__main__':
-    logging.basicConfig(level=logging.DEBUG)
-    app.run(debug=True, host=cfg.server['hostname'])

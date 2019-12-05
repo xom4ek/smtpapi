@@ -25,8 +25,8 @@ class smtpwrapper():
             self.attach(MIMEText(body, 'html'))
             for f in files:
                 filename = str(*f)
-                print(filename)
                 filename_ext = os.path.splitext(filename)[1].lower()
+                print(filename_ext)
                 if filename_ext in image_extension:
                     self.msgImg = MIMEImage(f[filename])
                     self.msgImg.add_header(
@@ -80,7 +80,8 @@ class smtpwrapper():
         LOGGER.info('Connecting to %s' % self.hostname)
         if self.use_tls:
             try:
-                res = self.conn = SMTP_SSL(host=self.hostname, port=self.port,timeout=1)
+                res = self.conn = SMTP_SSL(
+                    host=self.hostname, port=self.port, timeout=1)
                 LOGGER.info(res)
             except Exception as e:
                 LOGGER.error(e.__str__())
@@ -124,30 +125,10 @@ class smtpwrapper():
             return self, e
 
     def sendTemplate(self, *args, **kwargs):
-        self.msg = self.Email(**kwargs)
-        self, e = self.send_email(self.msg)
+        msg = self.Email(**kwargs)
+        self, e = self.send_email(msg)
         if e:
-            error = re.sub("[\{\}b()']", "", e.__str__())
+            error = re.sub(r"[\{\}b()']", "", e.__str__())
             return {'response_text': error}
         else:
             return {}
-
-
-if __name__ == "__main__":
-    import yaml
-
-    class Struct:
-        def __init__(self, **entries):
-            self.__dict__.update(entries)
-
-    def Get_config(config):
-        with open(config) as f:
-            return Struct(**yaml.safe_load(f))
-    logging.basicConfig(level=logging.DEBUG)
-    cfg = Get_config('config.yml')
-    LOGGER.debug(cfg.smtp)
-    smtp = smtpwrapper(**cfg.smtp)
-    smtp, result = smtp.sendTemplate(**cfg.send, subject='Privet 1')
-    smtp, result = smtp.sendTemplate(**cfg.send, subject='Privet 2')
-    smtp, result = smtp.sendTemplate(**cfg.send, subject='Privet 3')
-    LOGGER.debug('%s' % (result))

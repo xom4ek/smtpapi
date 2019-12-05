@@ -1,7 +1,7 @@
-FROM 10.29.6.41/registry/containers/ubi-with-python/ubi8
+FROM registry.gitlab.nglm.rt.ru/containers/ubi-with-repos/ubi8
 ARG PROXY_USER
-ARG PROXY_PASSWORD
 ARG PROXY_HOST
+ARG PROXY_PASSWORD
 ARG PROXY_STRING=http://$PROXY_USER:$PROXY_PASSWORD@$PROXY_HOST
 
 ENV HTTPS_PROXY=${PROXY_STRING} \
@@ -21,22 +21,27 @@ RUN echo "[main]" >> /etc/dnf/dnf.conf && \
     echo "proxy_password=$PROXY_PASSWORD" >> /etc/dnf/dnf.conf && \
     echo "proxy_auth_method=basic" >> /etc/dnf/dnf.conf
 
-# Update image and install python
-RUN dnf update && \
-    dnf install -y python36
 
+#Copy requirements
 COPY requirements.txt /app/requirements.txt
 WORKDIR /app
 
+# Update image and install python
+RUN dnf -y update && \
+    dnf install -y python36
+
 #Install requirements \
-RUN pip3 install -r requirements.txt
+RUN pip3 install -r requirements.txt && \
+    pip3 install gunicorn
 
+# Delete all usersettings and dnf cache
 RUN dnf clean all && \
-rm -rf /etc/dnf/dnf.conf && \
-unset HTTPS_PROXY http_proxy https_proxy HTTP_PROXY
+    rm -rf /etc/dnf/dnf.conf && \
+    unset HTTPS_PROXY http_proxy https_proxy HTTP_PROXY
 
-#Expose port gunicorn \
+# Expose port gunicorn \
 EXPOSE 8080
+VOLUME [ "/var/log" ]
 
 # Command for start gunicorn server
 # -w --workers
